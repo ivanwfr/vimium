@@ -4,7 +4,7 @@ import "../lib/url_utils.js";
 import "../background_scripts/tab_recency.js";
 import * as bgUtils from "../background_scripts/bg_utils.js";
 import "../background_scripts/all_commands.js";
-import { Commands } from "../background_scripts/commands.js";
+import * as commands from "../background_scripts/commands.js";
 import * as exclusions from "../background_scripts/exclusions.js";
 import "../background_scripts/completion_engines.js";
 import "../background_scripts/completion_search.js";
@@ -595,6 +595,20 @@ const HintCoordinator = {
   },
 };
 
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command == "open-tab") {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0];
+    const blankUrl = chrome.runtime.getURL("pages/blank.html");
+    await BackgroundCommands.createTab({
+      registryEntry: new commands.RegistryEntry({ options: {} }),
+      tab,
+      count: 1,
+      url: blankUrl,
+    });
+  }
+});
+
 const sendRequestHandlers = {
   runBackgroundCommand(request, sender) {
     return BackgroundCommands[request.registryEntry.command](request, sender);
@@ -887,7 +901,7 @@ async function injectContentScriptsAndCSSIntoExistingTabs() {
 
 async function initializeExtension() {
   await Settings.onLoaded();
-  await Commands.init();
+  await commands.Commands.init();
 }
 
 // The browser may have tabs already open. We inject the content scripts and Vimium's CSS

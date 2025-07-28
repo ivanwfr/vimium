@@ -490,6 +490,7 @@ const defaultKeyMappings = {
 
 export {
   Commands,
+  RegistryEntry,
   // Exported for unit tests.
   defaultKeyMappings,
   KeyMappingsParser,
