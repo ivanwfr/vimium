@@ -34,11 +34,17 @@
     "search"
   ],
   "commands": {
-    "open-tab": {
+    "new-tab": {
       "suggested_key": {
         "default": "Ctrl+T"
       },
       "description": "Open Vimium new tab page"
+    },
+    "new-window": {
+      "suggested_key": {
+        "default": "Ctrl+N"
+      },
+      "description": "Open Vimium new tab page in a new window"
     }
   },
   "content_scripts": [

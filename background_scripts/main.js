@@ -597,16 +597,22 @@ const HintCoordinator = {
 };
 
 chrome.commands.onCommand.addListener(async (command) => {
-  if (command == "open-tab") {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const tab = tabs[0];
-    // const blankUrl = chrome.runtime.getURL("pages/blank.html");
-    const blankUrl = chrome.runtime.getURL("pages/new_tab_page.html");
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const url = chrome.runtime.getURL("pages/new_tab_page.html");
+  const tab = tabs[0];
+  if (command == "new-tab") {
     await BackgroundCommands.createTab({
       registryEntry: new commands.RegistryEntry({ options: {} }),
       tab,
       count: 1,
-      url: blankUrl,
+      url,
+    });
+  } else if (command == "new-window") {
+    await BackgroundCommands.createTab({
+      registryEntry: new commands.RegistryEntry({ options: { window: true } }),
+      tab,
+      count: 1,
+      url,
     });
   }
 });
