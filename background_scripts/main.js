@@ -257,7 +257,8 @@ const BackgroundCommands = {
         } else {
           // Otherwise, just create a new tab.
           let newTabUrl = Settings.get("newTabUrl");
-          if (newTabUrl == "pages/blank.html") {
+          // if (newTabUrl == "pages/blank.html") {
+          if (newTabUrl == "pages/new_tab_page.html") {
             // "pages/blank.html" does not work in incognito mode, so fall back to "chrome://newtab"
             // instead.
             newTabUrl = request.tab.incognito
@@ -599,7 +600,8 @@ chrome.commands.onCommand.addListener(async (command) => {
   if (command == "open-tab") {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const tab = tabs[0];
-    const blankUrl = chrome.runtime.getURL("pages/blank.html");
+    // const blankUrl = chrome.runtime.getURL("pages/blank.html");
+    const blankUrl = chrome.runtime.getURL("pages/new_tab_page.html");
     await BackgroundCommands.createTab({
       registryEntry: new commands.RegistryEntry({ options: {} }),
       tab,
