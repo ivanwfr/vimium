@@ -258,12 +258,15 @@ const BackgroundCommands = {
           // Otherwise, just create a new tab.
           let newTabUrl = Settings.get("newTabUrl");
           // if (newTabUrl == "pages/blank.html") {
-          if (newTabUrl == "pages/new_tab_page.html") {
+          // if (newTabUrl == "pages/new_tab_page.html") {
+          if (newTabUrl == "https://vimium.github.io/new-tab/") {
             // "pages/blank.html" does not work in incognito mode, so fall back to "chrome://newtab"
             // instead.
             newTabUrl = request.tab.incognito
               ? Settings.defaultOptions.newTabUrl
-              : chrome.runtime.getURL(newTabUrl);
+              // TODO(philc): This is only needed when newTabUrl is an extension page.
+              // : chrome.runtime.getURL(newTabUrl);
+              : newTabUrl;
           }
           request.urls = [newTabUrl];
         }
@@ -598,7 +601,8 @@ const HintCoordinator = {
 
 chrome.commands.onCommand.addListener(async (command) => {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  const url = chrome.runtime.getURL("pages/new_tab_page.html");
+  // const url = chrome.runtime.getURL("pages/new_tab_page.html");
+  url = "https://vimium.github.io/new-tab/";
   const tab = tabs[0];
   if (command == "create-tab") {
     await BackgroundCommands.createTab({
