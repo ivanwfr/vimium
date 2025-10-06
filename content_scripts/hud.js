@@ -1,3 +1,6 @@
+/* ┌────────────────────────────────────────────────────────────────────────┐ */
+/* │ content_scripts/hud.js ● [is_showing] ........... _TAG (250912:19h:46) │ */
+/* └────────────────────────────────────────────────────────────────────────┘ */
 //
 // A heads-up-display (HUD) for showing Vimium page operations.
 // Note: you cannot interact with the HUD until document.body is available.
@@ -76,6 +79,7 @@ const HUD = {
   async show(text, duration) {
     await DomUtils.documentComplete();
     clearTimeout(this._showForDurationTimerId);
+                 this._showForDurationTimerId = null;   // is_showing
     // @hudUI.activate will take charge of making it visible
     await this.init(false);
     this.hudUI.show({ name: "show", text });
@@ -121,6 +125,7 @@ const HUD = {
     }
     if ((this.hudUI != null) && (this.tween != null)) {
       clearTimeout(this._showForDurationTimerId);
+                   this._showForDurationTimerId = null; // is_showing
       this.tween.stop();
       if (immediate) {
         if (updateIndicator) {
@@ -214,6 +219,20 @@ const HUD = {
     // Since the message is long and surprising, show it for longer to allow more time to reading.
     this.show("Clipboard actions available only on HTTPS sites", 4000);
   },
+  is_showing() {
+try{
+//console.log("● ......this.hudUI.shadowDOM"    );
+//console.dir(         this.hudUI.shadowDOM     );
+  console.log("● ......this.hudUI.iframeElement");
+  console.dir(         this.hudUI.iframeElement );
+  let hud_container =  this.hudUI.iframeElement.getElementById("hud-container");
+  console.log("● ......hud_container");
+  console.dir(         hud_container       );
+  console.dir(         hud_container.style );
+} catch(ex) {}
+
+    return !!(this._showForDurationTimerId || this.tween.is_showing());
+  }
 };
 
 class Tween {
@@ -239,6 +258,7 @@ class Tween {
 
   fade(toAlpha, duration, onComplete) {
     clearInterval(this.intervalId);
+                  this.intervalId = null;   // is_showing
     const startTime = (new Date()).getTime();
     const fromAlpha = this.opacity;
     const alphaStep = toAlpha - fromAlpha;
@@ -247,6 +267,7 @@ class Tween {
       const elapsed = (new Date()).getTime() - startTime;
       if (elapsed >= duration) {
         clearInterval(this.intervalId);
+                      this.intervalId = null;   // is_showing
         this.updateStyle(toAlpha);
         if (onComplete) {
           onComplete();
@@ -263,16 +284,28 @@ class Tween {
 
   stop() {
     clearInterval(this.intervalId);
+                  this.intervalId = null;   // is_showing
   }
 
   updateStyle(opacity) {
-    this.opacity = opacity;
-    this.styleElement.innerHTML = `\
-${this.cssSelector} {
-  opacity: ${this.opacity};
-}\
-`;
+    let data_options = this.styleElement.getAttribute("data-options") || "";
+    this.opacity     = opacity;
+    this.styleElement.innerHTML
+      = `\
+         ${this.cssSelector} { opacity: ${this.opacity}; }\
+         ${data_options}\
+      `;
+  }
+  is_showing() {
+    if(!this.styleElement.getAttribute("data-options"))
+        this.styleElement.setAttribute( "data-options", " SPAN { border: 1px solid yellow; }");
+    return !!this.intervalId;
   }
 }
 
 globalThis.HUD = HUD;
+//dom_log.log8("LOADED: dev/content_scripts/hud.js");
+
+/*{{{
+vim: sw=2
+ }}}*/
