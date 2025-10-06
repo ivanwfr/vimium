@@ -1,3 +1,6 @@
+/* ┌────────────────────────────────────────────────────────────────────────┐ */
+/* │ content_scripts/ui_component..................... _TAG (250908:21h:15) │ */
+/* └────────────────────────────────────────────────────────────────────────┘ */
 // A UIComponent is an iframe containing a Vimium extension page, like the Vomnibar. This class
 // provides methods that content scripts can use to interact with that page:
 // - show
@@ -138,7 +141,12 @@ class UIComponent {
     reverseFilterIfExists();
 
     const observer = new MutationObserver(reverseFilterIfExists);
+try {
     observer.observe(document.head, { characterData: true, subtree: true, childList: true });
+} catch(ex) {
+//  dom_log.log7("🟤🟤🟤 content_scripts/ui_component.observer.handleDarkReaderFilter.observe");
+//  console.log(ex);
+}
   }
 
   setIframeVisible(visible) {
@@ -207,3 +215,7 @@ class UIComponent {
 }
 
 globalThis.UIComponent = UIComponent;
+
+/*{{{
+vim: sw=2
+ }}}*/
