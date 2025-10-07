@@ -1,9 +1,9 @@
 /* ┌────────────────────────────────────────────────────────────────────────┐ */
-/* │ background_scripts/main.js ...................... _TAG (250923:02h:34) │ */
+/* │ background_scripts/main.js ...................... _TAG (251007:19h:58) │ */
 /* └────────────────────────────────────────────────────────────────────────┘ */
 /* jshint esversion: 9, laxbreak:true, laxcomma:true, boss:true {{{*/
 
-/* globals console, chrome */ /* eslint-disable-line no-unused-vars */
+/* globals console, chrome */
 
 /* globals BookmarkCompleter     */
 /* globals Commands              */
@@ -27,6 +27,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-warning-comments */
+/* eslint-disable strict *///FIXME
 
 /* exported vimium_frontend */
 
@@ -65,7 +66,7 @@ import {
 import * as TabOperations from "./tab_operations.js";
 /*}}}*/
 
-let background_main = (function() {
+//let background_main = (function() {
 "use strict";
 /*{{{*/
 
@@ -583,20 +584,21 @@ let removeTabsRelative = async function(direction, { count, tab })
 // - direction: "next", "previous", "first" or "last".
 let selectTab = function(direction, { count, tab })
 {
+//console.clear();
   chrome.tabs.query(visibleTabsQueryArgs, function(tabs) {
     if (tabs.length < 1) return;
     /* filter out chrome system tabs (those where the extension is not allowed) {{{*/
     let filtered_tabs = [];
     for(let i=0; i<tabs.length; ++i) {
-      if( !tabs[i].url.startsWith("chrome://") )
+      if( tabs[i].url.match(/(file|https?|ftp):\/\//) )
         filtered_tabs.push( tabs[i] );
     }
     /*}}}*/
     /* Next-Previous tab {{{*/
     if(filtered_tabs.length > 1) {
       const toSelect = (() => {
-        /* filtered tabs idx {{{*/
-        let current_idx = getTabIndex(tab, filtered_tabs);
+        /* filtered_tabs idx {{{*/
+        let     current_idx = getTabIndex(tab, filtered_tabs);
         let idx;
         switch( direction ) {
         case "next":
@@ -620,36 +622,46 @@ let selectTab = function(direction, { count, tab })
         if((direction == "next"    ) && (idx < current_idx)) idx = current_idx;
         if((direction == "previous") && (idx > current_idx)) idx = current_idx;
         /*}}}*/
-        /* unfiltered tabs idx {{{*/
+        /* unfiltered tabs.id idx {{{*/
+        let filtered_id  =  filtered_tabs[idx].id;
+/*{{{
+dom_log.log5("filtered_id=["+filtered_id+"] [url "+filtered_tabs[idx].url+"]");
+}}}*/
+
         let tabs_idx;
-        for(tabs_idx=0; tabs_idx<tabs.length; ++tabs_idx) {
-          if( tabs[tabs_idx].url == filtered_tabs[idx].url)
+        for(tabs_idx=0; tabs_idx<tabs.length; ++tabs_idx)
+        {
+          let excluded = filtered_tabs.includes(tabs[tabs_idx]);
+/*{{{
+let log = excluded ? dom_log.log2 : dom_log.log5;
+log(direction+" "+tabs_idx+" [tabs.id "+tabs[tabs_idx].id+"] [url "+tabs[tabs_idx].url+"] "+(excluded ? "[excluded]":""));
+}}}*/
+          if(tabs[tabs_idx].id == filtered_id)
             break;
         }
-        let unchanged = (idx == current_idx);
-/* log {{{*/
+        let same_idx = (idx == current_idx);
+/*{{{
 let log = (direction == "first"   ) ? dom_log.log1
   :       (direction == "previous") ? dom_log.log3
   :       (direction == "next"    ) ? dom_log.log4
   :       (direction == "last"    ) ? dom_log.log5
   :                                   dom_log.log2;
+dom_log.log ("selectTab("+ direction+", "+count +")");
+dom_log.log5("........from #"  + current_idx        );
+dom_log.log5("...same_idx "    + same_idx          );
+dom_log.log ("..........to %c#"+      tabs_idx +" "+ direction, dom_log.lfX[same_idx ? 2 : 5]);
+dom_log.log ("...........● "   + tabs[tabs_idx].url );
+dom_log.log (".....tab.id  "   + tab.id             );
+dom_log.log (".....tab.url "   + tab.url            );
+}}}*/
 
-//dom_log.log ("selectTab("+ direction+", "+count +")");
-//dom_log.log5("........from #"  + current_idx        );
-//dom_log.log5("...unchanged "   + unchanged          );
-//dom_log.log ("..........to %c#"+      tabs_idx +" "+ direction, dom_log.lfX[unchanged ? 2 : 5]);
-//dom_log.log ("...........● "   + tabs[tabs_idx].url );
-//dom_log.log (".....tab.id  "   + tab.id             );
-//dom_log.log (".....tab.url "   + tab.url            );
-
-/*}}}*/
         /*}}}*/
-        /* Current tab unchanged {{{*/
-        if( unchanged ) {
+        /* current tab same_idx {{{*/
+        if( same_idx ) {
 //dom_log.log_caller();
           let message = (direction == "next"    ) ? "🔴 \u25B6 No "+direction+" tab"
-            :             (direction == "previous") ? "🔴 \u25C0 No "+direction+" tab"
-            :                                                   "No "+direction+" tab";
+            :           (direction == "previous") ? "🔴 \u25C0 No "+direction+" tab"
+            :                                                 "No "+direction+" tab";
 
           chrome.tabs.sendMessage(tab.id, { handler: "showMessage" , message });
         }
@@ -1154,22 +1166,22 @@ Object.assign(globalThis, {
   majorVersionHasIncreased,
   nextZoomLevel,
 });
-return { TabOperations
-    // Exported for tests:
-    ,    HintCoordinator
-    ,    BackgroundCommands
-    ,    majorVersionHasIncreased
-    ,    nextZoomLevel
-
-    ,    initializeExtension
-};
+//return { TabOperations
+//    // Exported for tests:
+//    ,    HintCoordinator
+//    ,    BackgroundCommands
+//    ,    majorVersionHasIncreased
+//    ,    nextZoomLevel
+//
+//    ,    initializeExtension
+//};
 /*}}}*/
-}());
+//}());
 
 // The chrome.runtime.onStartup and onInstalled events are not fired when disabling and then
 // re-enabling the extension in developer mode, so we also initialize the extension here.
-dom_log.log1("background_main.initializeExtension");
-background_main.initializeExtension();
+//dom_log.log1("background_main.initializeExtension");
+//background_main.initializeExtension();
 
 /*{{{
 vim: sw=2
