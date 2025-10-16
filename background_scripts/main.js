@@ -1,3 +1,38 @@
+/* ┌────────────────────────────────────────────────────────────────────────┐ */
+/* │ background_scripts/main.js ...................... _TAG (251016:20h:10) │ */
+/* └────────────────────────────────────────────────────────────────────────┘ */
+/* jshint esversion: 9, laxbreak:true, laxcomma:true, boss:true {{{*/
+
+/* globals console, chrome */
+
+/* globals BookmarkCompleter     */
+/* globals Commands              */
+/* globals DomainCompleter       */
+/* globals HistoryCompleter      */
+/* globals MultiCompleter        */
+/* globals SearchEngineCompleter */
+/* globals Settings              */
+/* globals TabCompleter          */
+/* globals TabOperations         */
+/* globals UrlUtils              */
+/* globals Utils                 */
+/* globals bgUtils               */
+/* globals dom_log               */
+/* globals exclusions            */
+/* globals fetch                 */
+/* globals marks                 */
+/* globals tabLoadedHandlers     */
+
+/* eslint-disable comma-dangle */
+/* eslint-disable consistent-return */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-warning-comments */
+/* eslint-disable strict *///FIXME
+
+/* exported vimium_frontend */
+
+/*}}}*/
+/* import {{{*/
 import "../lib/utils.js";
 import "../lib/settings.js";
 import "../lib/url_utils.js";
@@ -12,13 +47,15 @@ import "../background_scripts/completion.js";
 import "../background_scripts/tab_operations.js";
 import * as marks from "../background_scripts/marks.js";
 
+import "../lib/dom_log.js";
+
 import {
   BookmarkCompleter,
   DomainCompleter,
   HistoryCompleter,
   MultiCompleter,
   SearchEngineCompleter,
-  TabCompleter,
+  TabCompleter
 } from "./completion.js";
 
 // NOTE(philc): This file has many superfluous return statements in its functions, as a result of
@@ -27,6 +64,11 @@ import {
 // conversion.
 
 import * as TabOperations from "./tab_operations.js";
+/*}}}*/
+
+//let background_main = (function() {
+"use strict";
+/*{{{*/
 
 // Allow Vimium's content scripts to access chrome.storage.session. Otherwise,
 // chrome.storage.session will be null in content scripts.
@@ -67,8 +109,10 @@ if (bgUtils.isFirefox()) {
   // Only Firefox supports hidden tabs.
   visibleTabsQueryArgs.hidden = false;
 }
-
-function onURLChange(details) {
+/*}}}*/
+/*_ onURLChange {{{*/
+let onURLChange = function(details)
+{
   // sendMessage will throw "Error: Could not establish connection. Receiving end does not exist."
   // if there is no Vimium content script loaded in the given tab. This can occur if the user
   // navigated to a page where Vimium doesn't have permissions, like chrome:// URLs. This error is
@@ -79,8 +123,9 @@ function onURLChange(details) {
   };
   chrome.tabs.sendMessage(details.tabId, message, { frameId: details.frameId })
     .catch(() => {});
-}
-
+};
+/*}}}*/
+/* onHistoryStateUpdated ● onReferenceFragmentUpdated ● storage.session {{{*/
 // Re-check whether Vimium is enabled for a frame when the URL changes without a reload.
 // There's no reliable way to detect when the URL has changed in the content script, so we
 // have to use the webNavigation API in our background script.
@@ -98,12 +143,16 @@ if (!globalThis.isUnitTests) {
     });
   })();
 }
-
-function muteTab(tab) {
+/*}}}*/
+/*_ muteTab {{{*/
+let muteTab = function(tab)
+{
   chrome.tabs.update(tab.id, { muted: !tab.mutedInfo.muted });
-}
-
-function toggleMuteTab(request, sender) {
+};
+/*}}}*/
+/*_ toggleMuteTab {{{*/
+let toggleMuteTab = function(request, sender)
+{
   const currentTab = request.tab;
   const tabId = request.tabId;
   const registryEntry = request.registryEntry;
@@ -154,37 +203,43 @@ function toggleMuteTab(request, sender) {
     }
     muteTab(currentTab);
   }
-}
-
+};
+/*}}}*/
+/*_ getTabIndex {{{*/
 // Find a tab's actual index in a given tab array returned by chrome.tabs.query. In Firefox, there
 // may be hidden tabs, so tab.tabIndex may not be the actual index into the array of visible tabs.
-function getTabIndex(tab, tabs) {
+let getTabIndex = function(tab, tabs)
+{
   // First check if the tab is where we expect it, to avoid searching the array.
   if (tabs.length > tab.index && tabs[tab.index].index === tab.index) {
     return tab.index;
   } else {
     return tabs.findIndex((t) => t.index === tab.index);
   }
-}
-
+};
+/*}}}*/
+/*_ selectSpecificTab {{{*/
 //
 // Selects the tab with the ID specified in request.id
 //
-async function selectSpecificTab(request) {
+let selectSpecificTab = async function(request)
+{
   const tab = await chrome.tabs.get(request.id);
   // Focus the tab's window. TODO(philc): Why are we null-checking chrome.windows here?
   if (chrome.windows != null) {
     await chrome.windows.update(tab.windowId, { focused: true });
   }
   await chrome.tabs.update(request.id, { active: true });
-}
-
-function moveTab({ count, tab, registryEntry }) {
+};
+/*}}}*/
+/*_ moveTab {{{*/
+let moveTab = function({ count, tab, registryEntry })
+{
   if (registryEntry.command === "moveTabLeft") {
     count = -count;
   }
   return chrome.tabs.query(visibleTabsQueryArgs, function (tabs) {
-    const pinnedCount = (tabs.filter((tab) => tab.pinned)).length;
+    const pinnedCount = (tabs.filter((tab) => tab.pinned)).length; /* eslint-disable-line no-shadow */
     const minIndex = tab.pinned ? 0 : pinnedCount;
     const maxIndex = (tab.pinned ? pinnedCount : tabs.length) - 1;
     // The tabs array index of the new position.
@@ -193,21 +248,25 @@ function moveTab({ count, tab, registryEntry }) {
       index: tabs[moveIndex].index,
     });
   });
-}
-
-function createRepeatCommand(command) {
+};
+/*}}}*/
+/*_ createRepeatCommand {{{*/
+let createRepeatCommand = function(command)
+{
   return async function (request) {
     let i = request.count - 1;
-    const r = Object.assign({}, request);
+    const r = Object.assign({}, request); /* eslint-disable-line prefer-object-spread */
     delete r.count;
     while (i >= 0) {
       i--;
-      await command(r);
+      await command(r); /* eslint-disable-line no-await-in-loop */
     }
   };
-}
-
-function nextZoomLevel(currentZoom, steps) {
+};
+/*}}}*/
+/*_ nextZoomLevel {{{*/
+let nextZoomLevel = function(currentZoom, steps)
+{
   // Chrome's default zoom levels.
   const chromeLevels = [0.25, 0.33, 0.5, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
   // Firefox's default zoom levels.
@@ -233,11 +292,14 @@ function nextZoomLevel(currentZoom, steps) {
     ceilIndex = ceilIndex == -1 ? zoomLevels.length : ceilIndex;
     return zoomLevels[Math.max(0, ceilIndex + steps)];
   }
-}
+};
+/*}}}*/
 
+/*➔ BackgroundCommands {{{*/
 // These are commands which are bound to keystrokes which must be handled by the background page.
 // They are mapped in commands.js.
 const BackgroundCommands = {
+  /* createTab {{{*/
   // Create a new tab. Also, with:
   //     map X createTab http://www.bbc.com/news
   // create a new tab with the given URL.
@@ -253,7 +315,7 @@ const BackgroundCommands = {
         const isUrl = await Promise.all(promises);
         const urlList = options.filter((_, i) => isUrl[i]);
         if (urlList.length > 0) {
-          request.urls = urlList;
+          request.urls = urlList; /* eslint-disable-line require-atomic-updates */
         } else {
           // Otherwise, just create a new tab.
           let newTabUrl = Settings.get("newTabUrl");
@@ -264,7 +326,7 @@ const BackgroundCommands = {
               ? Settings.defaultOptions.newTabUrl
               : chrome.runtime.getURL(newTabUrl);
           }
-          request.urls = [newTabUrl];
+          request.urls = [newTabUrl]; /* eslint-disable-line require-atomic-updates */
         }
       }
     }
@@ -284,19 +346,21 @@ const BackgroundCommands = {
       }
       while (urls.length > 0) {
         const url = urls.pop();
-        const tab = await TabOperations.openUrlInNewTab(Object.assign(request, { url }));
+        const tab = await TabOperations.openUrlInNewTab(Object.assign(request, { url })); /* eslint-disable-line no-await-in-loop */
         // Ensure subsequent invocations of this command place the next tab directly after this one.
         Object.assign(request, { tab, position: "after", active: false });
       }
     }
   }),
-
+/*}}}*/
+/*{{{*/
   duplicateTab: createRepeatCommand(async (request) => {
     const tab = await chrome.tabs.duplicate(request.tabId);
     // Ensure subsequent invocations of this command place the next tab directly after this one.
-    request.tabId = tab.id;
+    request.tabId = tab.id; /* eslint-disable-line require-atomic-updates */
   }),
-
+/*}}}*/
+/*{{{*/
   moveTabToNewWindow({ count, tab }) {
     // TODO(philc): Switch to the promise API of chrome.tabs.query.
     chrome.tabs.query(visibleTabsQueryArgs, function (tabs) {
@@ -308,60 +372,94 @@ const BackgroundCommands = {
       });
     });
   },
-
+/*}}}*/
+/*{{{*/
   nextTab(request) {
     return selectTab("next", request);
   },
+/*}}}*/
+/*{{{*/
   previousTab(request) {
     return selectTab("previous", request);
   },
+/*}}}*/
+/*{{{*/
   firstTab(request) {
     return selectTab("first", request);
   },
+/*}}}*/
+/*{{{*/
   lastTab(request) {
     return selectTab("last", request);
   },
+/*}}}*/
+/*{{{*/
   async removeTab({ count, tab }) {
-    await forCountTabs(count, tab, (tab) => {
+    await forCountTabs(count, tab, (tab) => { /* eslint-disable-line no-shadow */
       // In Firefox, Ctrl-W will not close a pinned tab, but on Chrome, it will. We try to be
       // consistent with each browser's UX for pinned tabs.
       if (tab.pinned && bgUtils.isFirefox()) return;
       chrome.tabs.remove(tab.id);
     });
   },
+/*}}}*/
+/*{{{*/
   restoreTab: createRepeatCommand(async (request) => {
     await chrome.sessions.restore(null);
   }),
+/*}}}*/
+/*{{{*/
   async togglePinTab({ count, tab }) {
-    await forCountTabs(count, tab, (tab) => {
+    await forCountTabs(count, tab, (tab) => { /* eslint-disable-line no-shadow */
       chrome.tabs.update(tab.id, { pinned: !tab.pinned });
     });
   },
+/*}}}*/
+/*{{{*/
   toggleMuteTab,
+
+/*}}}*/
+/*{{{*/
   moveTabLeft: moveTab,
+
+/*}}}*/
+/*{{{*/
   moveTabRight: moveTab,
 
-  async setZoom({ tabId, registryEntry }) {
-    const level = registryEntry.options?.["level"] ?? "1";
+/*}}}*/
+/*{{{*/
+  async setZoom({ tabId, registryEntry }) { /* eslint-disable-line require-await */
+    const level = registryEntry.options?.["level"] ?? "1"; /* eslint-disable-line dot-notation */
     const newZoom = parseFloat(level);
     if (!isNaN(newZoom)) {
       chrome.tabs.setZoom(tabId, newZoom);
     }
   },
+
+/*}}}*/
+/*{{{*/
   async zoomIn({ count, tabId }) {
     const currentZoom = await chrome.tabs.getZoom(tabId);
     const newZoom = nextZoomLevel(currentZoom, count);
     chrome.tabs.setZoom(tabId, newZoom);
   },
+
+/*}}}*/
+/*{{{*/
   async zoomOut({ count, tabId }) {
     const currentZoom = await chrome.tabs.getZoom(tabId);
     const newZoom = nextZoomLevel(currentZoom, -count);
     chrome.tabs.setZoom(tabId, newZoom);
   },
-  async zoomReset({ tabId }) {
+
+/*}}}*/
+/*{{{*/
+  async zoomReset({ tabId }) { /* eslint-disable-line require-await */
     chrome.tabs.setZoom(tabId, 0); // setZoom of 0 sets to the tab default.
   },
 
+/*}}}*/
+/*{{{*/
   async nextFrame({ count, tabId }) {
     // We're assuming that these frames are returned in the order that they appear on the page. This
     // seems to be the case empirically. If it's ever needed, we could also sort by frameId.
@@ -371,7 +469,7 @@ const BackgroundCommands = {
       // is in flight.
       let isError = false;
       const status = await (chrome.tabs.sendMessage(tabId, { handler: "getFocusStatus" }, {
-        frameId: frameId,
+        frameId: frameId, /* eslint-disable-line object-shorthand */
       }).catch((_) => {
         isError = true;
       }));
@@ -397,16 +495,26 @@ const BackgroundCommands = {
     });
   },
 
+/*}}}*/
+/*{{{*/
   async closeTabsOnLeft(request) {
     await removeTabsRelative("before", request);
   },
+
+/*}}}*/
+/*{{{*/
   async closeTabsOnRight(request) {
     await removeTabsRelative("after", request);
   },
+
+/*}}}*/
+/*{{{*/
   async closeOtherTabs(request) {
     await removeTabsRelative("both", request);
   },
 
+/*}}}*/
+/*{{{*/
   async visitPreviousTab({ count, tab }) {
     await bgUtils.tabRecency.init();
     let tabIds = bgUtils.tabRecency.getTabsByRecency();
@@ -417,25 +525,34 @@ const BackgroundCommands = {
     }
   },
 
+/*}}}*/
+/*{{{*/
   async reload({ count, tab, registryEntry }) {
     const bypassCache = registryEntry.options.hard != null ? registryEntry.options.hard : false;
-    await forCountTabs(count, tab, (tab) => {
+    await forCountTabs(count, tab, (tab) => { /* eslint-disable-line no-shadow */
       chrome.tabs.reload(tab.id, { bypassCache });
     });
   },
-};
 
-async function forCountTabs(count, currentTab, callback) {
+/*}}}*/
+};
+/*}}}*/
+
+/*_ forCountTabs {{{*/
+let forCountTabs = async function(count, currentTab, callback)
+{
   const tabs = await chrome.tabs.query(visibleTabsQueryArgs);
   const activeTabIndex = getTabIndex(currentTab, tabs);
   const startTabIndex = Math.max(0, Math.min(activeTabIndex, tabs.length - count));
   for (const tab of tabs.slice(startTabIndex, startTabIndex + count)) {
-    callback(tab);
+    callback(tab); /* eslint-disable-line callback-return */
   }
-}
-
+};
+/*}}}*/
+/*_ removeTabsRelative {{{*/
 // Remove tabs before, after, or either side of the currently active tab
-async function removeTabsRelative(direction, { count, tab }) {
+let removeTabsRelative = async function(direction, { count, tab })
+{
   // count is null if the user didn't type a count prefix before issuing this command and didn't
   // specify a count=n option in their keymapping settings. Interpret this as closing all tabs on
   // either side.
@@ -443,7 +560,7 @@ async function removeTabsRelative(direction, { count, tab }) {
   const activeTab = tab;
   const tabs = await chrome.tabs.query(visibleTabsQueryArgs);
   const activeIndex = getTabIndex(activeTab, tabs);
-  const toRemove = tabs.filter((tab, tabIndex) => {
+  const toRemove = tabs.filter((tab, tabIndex) => { /* eslint-disable-line no-shadow */
     if (tab.pinned || tab.id == activeTab.id) {
       return false;
     }
@@ -460,55 +577,146 @@ async function removeTabsRelative(direction, { count, tab }) {
   });
 
   await chrome.tabs.remove(toRemove.map((t) => t.id));
-}
-
+};
+/*}}}*/
+/*_ selectTab {{{*/
 // Selects a tab before or after the currently selected tab.
 // - direction: "next", "previous", "first" or "last".
-function selectTab(direction, { count, tab }) {
-  chrome.tabs.query(visibleTabsQueryArgs, function (tabs) {
-    if (tabs.length > 1) {
+let selectTab = function(direction, { count, tab })
+{
+//console.clear();
+  chrome.tabs.query(visibleTabsQueryArgs, function(tabs) {
+    if (tabs.length < 1) return;
+    /* filter out chrome system tabs (those where the extension is not allowed) {{{*/
+    let filtered_tabs = [];
+    for(let i=0; i<tabs.length; ++i) {
+      if( tabs[i].url.match(/(file|https?|ftp):\/\//) )
+        filtered_tabs.push( tabs[i] );
+    }
+    /*}}}*/
+    /* Next-Previous tab {{{*/
+    if(filtered_tabs.length > 1) {
       const toSelect = (() => {
-        switch (direction) {
-          case "next":
-            return (getTabIndex(tab, tabs) + count) % tabs.length;
-          case "previous":
-            return ((getTabIndex(tab, tabs) - count) + (count * tabs.length)) % tabs.length;
-          case "first":
-            return Math.min(tabs.length - 1, count - 1);
-          case "last":
-            return Math.max(0, tabs.length - count);
+        /* filtered_tabs idx {{{*/
+        let     current_filtered_idx = getTabIndex(tab, filtered_tabs);
+        let idx;
+        switch( direction ) {
+        case "next":
+        idx =  (current_filtered_idx + count) % filtered_tabs.length;
+        break;
+
+        case "previous":
+        idx = ((current_filtered_idx - count) + (count * filtered_tabs.length)) % filtered_tabs.length;
+        break;
+
+        case "first":
+        idx = Math.min(filtered_tabs.length - 1, count - 1);
+        break;
+
+        case "last":
+        idx = Math.max(0, filtered_tabs.length - count);
+        break;
         }
+        /*}}}*/
+        /* no wrap {{{*/
+        if((direction == "next"    ) && (idx < current_filtered_idx)) idx = current_filtered_idx;
+        if((direction == "previous") && (idx > current_filtered_idx)) idx = current_filtered_idx;
+        /*}}}*/
+        /* unfiltered tabs.id idx {{{*/
+        let filtered_id  =  filtered_tabs[idx].id;
+/*{{{
+dom_log.log5("filtered_id=["+filtered_id+"] [url "+filtered_tabs[idx].url+"]");
+}}}*/
+
+        let tabs_idx;
+        for(tabs_idx=0; tabs_idx<tabs.length; ++tabs_idx)
+        {
+          let excluded = filtered_tabs.includes(tabs[tabs_idx]);
+/*{{{
+let log = excluded ? dom_log.log2 : dom_log.log5;
+log(direction+" "+tabs_idx+" [tabs.id "+tabs[tabs_idx].id+"] [url "+tabs[tabs_idx].url+"] "+(excluded ? "[excluded]":""));
+}}}*/
+          if(tabs[tabs_idx].id == filtered_id)
+            break;
+        }
+        let same_idx = (idx == current_filtered_idx);
+/*{{{
+let log = (direction == "first"   ) ? dom_log.log1
+  :       (direction == "previous") ? dom_log.log3
+  :       (direction == "next"    ) ? dom_log.log4
+  :       (direction == "last"    ) ? dom_log.log5
+  :                                   dom_log.log2;
+dom_log.log ("selectTab("+ direction+", "+count +")");
+dom_log.log5("........from #"  + current_filtered_idx);
+dom_log.log5("...same_idx "    + same_idx            );
+dom_log.log ("..........to %c#"+      tabs_idx +" "+ direction, dom_log.lfX[same_idx ? 2 : 5]);
+dom_log.log ("...........● "   + tabs[tabs_idx].url  );
+dom_log.log (".....tab.id  "   + tab.id              );
+dom_log.log (".....tab.url "   + tab.url             );
+}}}*/
+
+        /*}}}*/
+        /* current tab same_idx {{{*/
+        if( same_idx ) {
+//dom_log.log_caller();
+          let message = (direction == "next"    ) ? "🔴 \u25B6 No "+direction+" tab"
+            :           (direction == "previous") ? "🔴 \u25C0 No "+direction+" tab"
+            :                                                 "No "+direction+" tab";
+
+          chrome.tabs.sendMessage(tab.id, { handler: "showMessage" , message });
+        }
+        /*}}}*/
+        return  tabs_idx;
       })();
       chrome.tabs.update(tabs[toSelect].id, { active: true });
     }
+    /*}}}*/
   });
-}
-
+};
+/*}}}*/
+/*_ swallowError {{{*/
+let swallowError = function(ex,caller="")
+{
+//  console.log("dev/background_scripts/main.js.swallowError:")
+//  console.log(  "%c"+caller+"%c"+ex
+//              , "background-color: #000; border: 1px solid green; border-radius:1em; padding: 0 0.5em;"
+//              ,             "background-color: #800; border: 1px solid white; border-radius:1em; padding: 0 0.5em;"
+//             );
+//  dom_log.log_caller();
+};
+/*}}}*/
+/*_ onCommitted {{{*/
 chrome.webNavigation.onCommitted.addListener(async ({ tabId, frameId }) => {
   // Vimium can't run on all tabs (e.g. chrome:// URLs). insertCSS will throw an error on such tabs,
   // which is expected, and noise. Swallow that error.
-  const swallowError = () => {};
+//const swallowError = () => {}; /* ivanwfr 250903 */
   await Settings.onLoaded();
   await chrome.scripting.insertCSS({
     css: Settings.get("userDefinedLinkHintCss"),
     target: {
-      tabId: tabId,
+      tabId: tabId, /* eslint-disable-line object-shorthand */
       frameIds: [frameId],
     },
-  }).catch(swallowError);
+  }).catch((ex) => swallowError(ex, "onCommitted"));
 });
 
+/*}}}*/
+/*_ getFrameIdsForTab {{{*/
 // Returns all frame IDs for the given tab. Note that in Chrome, this will omit frame IDs for frames
 // or iFrames which contain chrome-extension:// URLs, even if those pages are listed in Vimium's
 // web_accessible_resources in manifest.json.
-async function getFrameIdsForTab(tabId) {
+let getFrameIdsForTab = async function(tabId)
+{
   // getAllFrames unfortunately excludes frames and iframes from chrome-extension:// URLs.
   // In Firefox, by contrast, pages with moz-extension:// URLs are included.
-  const frames = await chrome.webNavigation.getAllFrames({ tabId: tabId });
+  const frames = await chrome.webNavigation.getAllFrames({ tabId: tabId }); /* eslint-disable-line object-shorthand */
   return frames.map((f) => f.frameId);
-}
+};
+/*}}}*/
 
+/*➔ HintCoordinator {{{*/
 const HintCoordinator = {
+/*_ broadcastLinkHintsMessage {{{*/
   // Forward the message in "request" to all frames the in sender's tab.
   broadcastLinkHintsMessage(request, sender) {
     chrome.tabs.sendMessage(
@@ -517,12 +725,15 @@ const HintCoordinator = {
     );
   },
 
+/*}}}*/
+  /*_ prepareToActivateLinkHintsMode {{{*/
   // This is sent by the content script once the user issues the link hints command.
   async prepareToActivateLinkHintsMode(
     tabId,
     originatingFrameId,
     { modeIndex, requestedByHelpDialog, isExtensionPage },
   ) {
+    /* getFrameIdsForTab {{{*/
     const frameIds = await getFrameIdsForTab(tabId);
     // If link hints was triggered on a Vimium extension page (like the vimium help dialog or
     // options page), we cannot directly retrieve the frameIds for those pages using the
@@ -555,6 +766,9 @@ const HintCoordinator = {
       };
     });
 
+    /*}}}*/
+    /* responses {{{*/
+
     const responses = (await Promise.all(promises))
       .filter((r) => r.descriptors != null);
 
@@ -567,17 +781,17 @@ const HintCoordinator = {
       // Don't send this frame's own link hints back to it -- they're already stored in that frame's
       // content script. At the time that we wrote this, this resulted in a 150% speedup for link
       // busy sites like Reddit.
-      const outgoingFrameIdToHintDescriptors = Object.assign({}, frameIdToDescriptors);
+      const outgoingFrameIdToHintDescriptors = Object.assign({}, frameIdToDescriptors); /* eslint-disable-line prefer-object-spread */
       delete outgoingFrameIdToHintDescriptors[frameId];
       return chrome.tabs.sendMessage(
         tabId,
         {
           handler: "linkHintsMessage",
           messageType: "activateMode",
-          frameId: frameId,
-          originatingFrameId: originatingFrameId,
+          frameId: frameId, /* eslint-disable-line object-shorthand */
+          originatingFrameId: originatingFrameId, /* eslint-disable-line object-shorthand */
           frameIdToHintDescriptors: outgoingFrameIdToHintDescriptors,
-          modeIndex: modeIndex,
+          modeIndex: modeIndex, /* eslint-disable-line object-shorthand */
         },
         { frameId },
       ).catch((error) => {
@@ -592,9 +806,14 @@ const HintCoordinator = {
       });
     });
     await Promise.all(promises);
+
+    /*}}}*/
   },
+/*}}}*/
 };
 
+/*}}}*/
+/*_ sendRequestHandlers {{{*/
 const sendRequestHandlers = {
   runBackgroundCommand(request, sender) {
     return BackgroundCommands[request.registryEntry.command](request, sender);
@@ -645,7 +864,7 @@ const sendRequestHandlers = {
   // Send a message to all frames in the current tab. If request.frameId is provided, then send
   // messages to only the frame with that ID.
   sendMessageToFrames(request, sender) {
-    const newRequest = Object.assign({}, request.message);
+    const newRequest = Object.assign({}, request.message); /* eslint-disable-line prefer-object-spread */
     const options = request.frameId != null ? { frameId: request.frameId } : {};
     chrome.tabs.sendMessage(sender.tab.id, newRequest, options);
   },
@@ -699,7 +918,7 @@ const sendRequestHandlers = {
       chrome.action.setIcon({ path: iconSet[whichIcon], tabId: sender.tab.id });
     }
 
-    const response = Object.assign({
+    const response = Object.assign({ /* eslint-disable-line prefer-object-spread */
       isFirefox: bgUtils.isFirefox(),
       firefoxVersion: await bgUtils.getFirefoxVersion(),
       frameId: sender.frameId,
@@ -739,6 +958,8 @@ const sendRequestHandlers = {
   },
 };
 
+/*}}}*/
+/*_ addChromeRuntimeOnMessageListener {{{*/
 Utils.addChromeRuntimeOnMessageListener(
   Object.keys(sendRequestHandlers),
   async function (request, sender) {
@@ -756,7 +977,7 @@ Utils.addChromeRuntimeOnMessageListener(
     // corresponds to. Since we expect a valid sender.tab, ignore those messages.
     if (sender.tab == null) return;
     await Settings.onLoaded();
-    request = Object.assign({ count: 1 }, request, {
+    request = Object.assign({ count: 1 }, request, { /* eslint-disable-line prefer-object-spread */
       tab: sender.tab,
       tabId: sender.tab.id,
     });
@@ -766,6 +987,8 @@ Utils.addChromeRuntimeOnMessageListener(
   },
 );
 
+/*}}}*/
+/*_ onRemoved {{{*/
 // Remove chrome.storage.local/findModeRawQueryListIncognito if there are no remaining
 // incognito-mode windows. Since the common case is that there are none to begin with, we first
 // check whether the key is set at all.
@@ -788,25 +1011,33 @@ chrome.tabs.onRemoved.addListener(function (tabId) {
   });
 });
 
+/*}}}*/
+
+/*➔ runTests {{{*/
 // Convenience function for development use.
 globalThis.runTests = () => open(chrome.runtime.getURL("tests/dom_tests/dom_tests.html"));
 
-//
-// Begin initialization.
-//
+/*}}}*/
 
+/* ┌────────────────────────────────────────────────────────────────────────┐ */
+/* │ Begin initialization                                                   │ */
+/* └────────────────────────────────────────────────────────────────────────┘ */
+/*_ majorVersionHasIncreased {{{*/
 // True if the major version of Vimium has changed.
 // - previousVersion: this will be null for new installs.
-function majorVersionHasIncreased(previousVersion) {
+let majorVersionHasIncreased = function(previousVersion)
+{
   const currentVersion = Utils.getCurrentVersion();
   if (previousVersion == null) return false;
-  const currentMajorVersion = currentVersion.split(".").slice(0, 2).join(".");
-  const previousMajorVersion = previousVersion.split(".").slice(0, 2).join(".");
+  const currentMajorVersion = currentVersion.split(".").slice(0, 2).join("."); /* eslint-disable-line newline-per-chained-call */
+  const previousMajorVersion = previousVersion.split(".").slice(0, 2).join("."); /* eslint-disable-line newline-per-chained-call */
   return Utils.compareVersions(currentMajorVersion, previousMajorVersion) == 1;
-}
-
+};
+/*}}}*/
+/*_ showUpgradeMessageIfNecessary {{{*/
 // Show notification on upgrade.
-async function showUpgradeMessageIfNecessary(onInstalledDetails) {
+let showUpgradeMessageIfNecessary = async function(onInstalledDetails)
+{
   const currentVersion = Utils.getCurrentVersion();
   // We do not show an upgrade message for patch/silent releases. Such releases have the same
   // major and minor version numbers.
@@ -844,9 +1075,11 @@ async function showUpgradeMessageIfNecessary(onInstalledDetails) {
       });
     });
   }
-}
-
-async function injectContentScriptsAndCSSIntoExistingTabs() {
+};
+/*}}}*/
+/*_ injectContentScriptsAndCSSIntoExistingTabs {{{*/
+let injectContentScriptsAndCSSIntoExistingTabs = async function()
+{
   const manifest = chrome.runtime.getManifest();
   const contentScriptConfig = manifest.content_scripts[0];
   const contentScripts = contentScriptConfig.js;
@@ -859,7 +1092,7 @@ async function injectContentScriptsAndCSSIntoExistingTabs() {
   // noise, we swallow the failures. We could instead try to determine if the tab is scriptable by
   // checking its URL scheme before calling these APIs, but that approach has some nuance to it.
   // This is simpler.
-  const swallowError = (_) => {};
+//const swallowError = (_) => {};
 
   const tabs = await chrome.tabs.query({ status: "complete" });
   for (const tab of tabs) {
@@ -868,32 +1101,37 @@ async function injectContentScriptsAndCSSIntoExistingTabs() {
     // Inject all of our content javascripts.
     chrome.scripting.executeScript({
       files: contentScripts,
-      target: target,
-    }).catch(swallowError);
+      target: target, /* eslint-disable-line object-shorthand */
+    }).catch((ex) => swallowError(ex, "INJECT contentScripts"));
 
     // Inject our extension's CSS.
     chrome.scripting.insertCSS({
       files: cssFiles,
-      target: target,
-    }).catch(swallowError);
+      target: target, /* eslint-disable-line object-shorthand */
+    }).catch((ex) => swallowError(ex, "INJECT cssFiles"));
 
     // Inject the user's link hint CSS.
     chrome.scripting.insertCSS({
       css: Settings.get("userDefinedLinkHintCss"),
-      target: target,
-    }).catch(swallowError);
+      target: target, /* eslint-disable-line object-shorthand */
+    }).catch((ex) => swallowError(ex, "INJECT userDefinedLinkHintCss"));
   }
-}
-
-async function initializeExtension() {
+};
+/*}}}*/
+/*_ initializeExtension {{{*/
+let initializeExtension = async function()
+{
   await Settings.onLoaded();
   await Commands.init();
-}
-
+};
+/*}}}*/
+/*_ onInstalled {{{*/
 // The browser may have tabs already open. We inject the content scripts and Vimium's CSS
 // immediately so that the extension is running on the pages immediately after install, rather than
 // having to reload those pages.
 chrome.runtime.onInstalled.addListener(async (details) => {
+console.log("chrome.runtime.onInstalled( "+JSON.stringify(details)+" )");
+console.dir( chrome.runtime );
   Utils.debugLog("chrome.runtime.onInstalled");
 
   // NOTE(philc): In my testing, when the onInstalled event occurs, the onStartup event does not
@@ -911,12 +1149,37 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   await showUpgradeMessageIfNecessary(details);
 });
 
+/*}}}*/
+/*_ onStartup {{{*/
 // Note that this event is not fired when an incognito profile is started.
 chrome.runtime.onStartup.addListener(async () => {
   Utils.debugLog("chrome.runtime.onStartup");
   await initializeExtension();
 });
 
+/*}}}*/
+
+chrome.runtime.onSuspend.addListener(() => {
+  console.log("chrome.runtime.onSuspend()");
+});
+// Background script
+/*{{{
+chrome.runtime.onShutdown.addListener(() => {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      chrome.tabs.sendMessage(tab.id, { action: "shutdown" }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Failed to send shutdown message:", chrome.runtime.lastError);
+        } else {
+          console.log("Shutdown message sent to content script:", response);
+        }
+      });
+    });
+  });
+});
+}}}*/
+
+/* ● globalThis ● Export {{{*/
 Object.assign(globalThis, {
   TabOperations,
   // Exported for tests:
@@ -925,7 +1188,23 @@ Object.assign(globalThis, {
   majorVersionHasIncreased,
   nextZoomLevel,
 });
+//return { TabOperations
+//    // Exported for tests:
+//    ,    HintCoordinator
+//    ,    BackgroundCommands
+//    ,    majorVersionHasIncreased
+//    ,    nextZoomLevel
+//
+//    ,    initializeExtension
+//};
+/*}}}*/
+//}());
 
 // The chrome.runtime.onStartup and onInstalled events are not fired when disabling and then
 // re-enabling the extension in developer mode, so we also initialize the extension here.
-initializeExtension();
+//dom_log.log1("background_main.initializeExtension");
+//background_main.initializeExtension();
+
+/*{{{
+vim: sw=2
+ }}}*/

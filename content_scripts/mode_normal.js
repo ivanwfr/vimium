@@ -87,10 +87,12 @@ function findSelectedHelper(backwards) {
 const NormalModeCommands = {
   // Scrolling.
   scrollToBottom() {
+globalThis.mode_normal_scrolled_to = "BOT";
     Marks.setPreviousPosition();
     Scroller.scrollTo("y", "max");
   },
   scrollToTop(count) {
+globalThis.mode_normal_scrolled_to = "TOP";
     Marks.setPreviousPosition();
     Scroller.scrollTo("y", (count - 1) * Settings.get("scrollStepSize"));
   },

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Vimium",
+  "name": "Vimium 🟤🔴🟠🟡🟢🔵🟣⚫⚪️ IWE",
   "version": "2.3",
   "description": "The Hacker's Browser. Vimium provides keyboard shortcuts for navigation and control in the spirit of Vim.",
   "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
@@ -45,6 +45,8 @@
         "lib/handler_stack.js",
         "lib/settings.js",
         "lib/find_mode_history.js",
+        "lib/find_mode_styling.js",
+        "lib/dom_log.js",
         "content_scripts/mode.js",
         "content_scripts/ui_component.js",
         "content_scripts/link_hints.js",
