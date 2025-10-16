@@ -1,1 +1,4 @@
 dist
+*.zip
+*.vim
+*.lnk
