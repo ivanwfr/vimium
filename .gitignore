@@ -1,1 +1,7 @@
 dist
+BAK
+*.zip
+*.vim
+*.lnk
+*_DENO*
+ARCHIVES*

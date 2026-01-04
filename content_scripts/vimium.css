@@ -68,7 +68,7 @@ tr.vimium-reset {
   vertical-align: baseline;
   white-space: normal;
   width: auto;
-  z-index: 2147483647;
+  z-index: 2147483645;
 }
 
 thead.vimium-reset, tbody.vimium-reset {
@@ -115,7 +115,7 @@ div.internal-vimium-hint-marker {
   border: solid 1px #c38a22;
   border-radius: 3px;
   box-shadow: 0px 3px 7px 0px rgba(0, 0, 0, 0.3);
-  z-index: 2147483647;
+  z-index: 2147483645;
 }
 
 div.internal-vimium-hint-marker span {
@@ -176,7 +176,7 @@ iframe.vimium-help-dialog-frame {
   display: block;
   position: fixed;
   border: none;
-  z-index: 2147483647;
+  z-index: 2147483645;
 }
 
 iframe.vimium-hud-frame {
@@ -187,12 +187,16 @@ iframe.vimium-hud-frame {
   position: fixed;
   width: 20%;
   min-width: 350px;
+/*{{{
   height: 58px;
   bottom: -14px;
+}}}*/
+  height: 60ch;
+  bottom: -5px;
   right: 20px;
   margin: 0 0 0 -40%;
   border: none;
-  z-index: 2147483647;
+  z-index: 2147483645;
   opacity: 0;
 }
 
@@ -215,7 +219,7 @@ iframe.vomnibar-frame {
   margin: 0 0 0 -40%;
   border: none;
   font-family: sans-serif;
-  z-index: 2147483647;
+  z-index: 2147483645;
 }
 
 div.vimium-flash {
@@ -223,7 +227,7 @@ div.vimium-flash {
   padding: 1px;
   background-color: transparent;
   position: absolute;
-  z-index: 2147483647;
+  z-index: 2147483645;
 }
 
 /* UIComponent CSS */

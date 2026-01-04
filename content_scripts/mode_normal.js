@@ -1,3 +1,46 @@
+// ┌───────────────────────────────────────────────────────────────────────────┐
+// │ content_scripts/mode_normal.js ..................... _TAG (251215:13h:43) ●
+// └───────────────────────────────────────────────────────────────────────────┘
+/* jshint esversion: 9, laxbreak:true, laxcomma:true, boss:true {{{*/
+
+/* global DomUtils */
+/* global FindMode */
+/* global HUD */
+/* global HelpDialog */
+/* global InsertMode */
+/* global KeyHandlerMode */
+/* global LinkHints */
+/* global Marks */
+/* global Mode */
+/* global PassNextKeyMode */
+/* global Rect */
+/* global Scroller */
+/* global Settings */
+/* global VisualLineMode */
+/* global VisualMode */
+/* global Vomnibar */
+/* global chrome */
+/* global focusThisFrame */
+/* global frameId */
+/* global lastFocusedInput */
+
+/* exported KeyHandlerMode  */
+/* exported FocusSelector   */
+
+ /* eslint-disable class-methods-use-this */
+ /* eslint-disable comma-dangle */
+ /* eslint-disable consistent-return */
+ /* eslint-disable func-style */
+ /* eslint-disable implicit-arrow-linebreak */
+ /* eslint-disable max-classes-per-file */
+ /* eslint-disable newline-per-chained-call */
+ /* eslint-disable no-alert */
+ /* eslint-disable no-implicit-globals */
+ /* eslint-disable prefer-rest-params */
+ /* eslint-disable quotes */
+ /* eslint-disable strict */
+ /* eslint-disable wrap-regex */
+/*}}}*/
 class NormalMode extends KeyHandlerMode {
   init(options) {
     if (options == null) {
@@ -87,41 +130,53 @@ function findSelectedHelper(backwards) {
 const NormalModeCommands = {
   // Scrolling.
   scrollToBottom() {
+    globalThis.mode_normal_scrolled_to = "BOT";
     Marks.setPreviousPosition();
     Scroller.scrollTo("y", "max");
   },
   scrollToTop(count) {
+    globalThis.mode_normal_scrolled_to = "TOP";
     Marks.setPreviousPosition();
     Scroller.scrollTo("y", (count - 1) * Settings.get("scrollStepSize"));
   },
   scrollToLeft() {
+    globalThis.mode_normal_scrolled_to = "LEFT";
     Scroller.scrollTo("x", 0);
   },
   scrollToRight() {
+    globalThis.mode_normal_scrolled_to = "RIGHT";
     Scroller.scrollTo("x", "max");
   },
   scrollUp(count) {
+    globalThis.mode_normal_scrolled_to = "UP";
     Scroller.scrollBy("y", -1 * Settings.get("scrollStepSize") * count);
   },
   scrollDown(count) {
+    globalThis.mode_normal_scrolled_to = "DOWN";
     Scroller.scrollBy("y", Settings.get("scrollStepSize") * count);
   },
   scrollPageUp(count) {
+    globalThis.mode_normal_scrolled_to = "PAGEUP";
     Scroller.scrollBy("y", "viewSize", (-1 / 2) * count);
   },
   scrollPageDown(count) {
+    globalThis.mode_normal_scrolled_to = "PAGEDOWN";
     Scroller.scrollBy("y", "viewSize", (1 / 2) * count);
   },
   scrollFullPageUp(count) {
+    globalThis.mode_normal_scrolled_to = "PAGEUP";
     Scroller.scrollBy("y", "viewSize", -1 * count);
   },
   scrollFullPageDown(count) {
+    globalThis.mode_normal_scrolled_to = "PAGEDOWN";
     Scroller.scrollBy("y", "viewSize", 1 * count);
   },
   scrollLeft(count) {
+    globalThis.mode_normal_scrolled_to = "LEFT";
     Scroller.scrollBy("x", -1 * Settings.get("scrollStepSize") * count);
   },
   scrollRight(count) {
+    globalThis.mode_normal_scrolled_to = "RIGHT";
     Scroller.scrollBy("x", Settings.get("scrollStepSize") * count);
   },
 
